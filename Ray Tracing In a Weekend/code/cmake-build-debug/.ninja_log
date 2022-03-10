@@ -1,5 +1,5 @@
 # ninja log v5
-0	638	1646750827247848815	CMakeFiles/code.dir/RayTracing.cpp.o	c6dbabc747a7dde2
-640	707	1646750827320177664	code	e457bdcbad19e874
-3	702	1646751040600592523	CMakeFiles/code.dir/RayTracing.cpp.o	c6dbabc747a7dde2
-703	773	1646751040674148020	code	e457bdcbad19e874
+3	696	1646796332539918621	CMakeFiles/code.dir/RayTracing.cpp.o	c6dbabc747a7dde2
+696	769	1646796332616257335	code	e457bdcbad19e874
+0	698	1646796461758875633	CMakeFiles/inOneWeekend.dir/RayTracing.cpp.o	d83dff51efedb397
+699	767	1646796461830402690	inOneWeekend	499faff3c99eecdb

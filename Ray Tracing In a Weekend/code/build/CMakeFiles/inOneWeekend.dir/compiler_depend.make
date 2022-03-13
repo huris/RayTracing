@@ -245,7 +245,8 @@ CMakeFiles/inOneWeekend.dir/RayTracing.cpp.o: ../RayTracing.cpp \
   ../hittable_list.h \
   ../hittable.h \
   ../sphere.h \
-  ../camera.h
+  ../camera.h \
+  ../material.h
 
 
 ../camera.h:
@@ -725,6 +726,8 @@ CMakeFiles/inOneWeekend.dir/RayTracing.cpp.o: ../RayTracing.cpp \
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/_stdio.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/machine/types.h:
+
+../material.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/sys/_types/_mbstate_t.h:
 

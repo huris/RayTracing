@@ -14,4 +14,5 @@ add_executable(inOneWeekend
         sphere.h
         hittable_list.h
         rtweekend.h
-        camera.h)
+        camera.h
+        material.h)

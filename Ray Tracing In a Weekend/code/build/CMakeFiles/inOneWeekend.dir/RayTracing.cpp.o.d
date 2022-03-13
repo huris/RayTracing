@@ -243,4 +243,5 @@ CMakeFiles/inOneWeekend.dir/RayTracing.cpp.o: \
   /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ In\ a\ Weekend/code/./hittable_list.h \
   /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ In\ a\ Weekend/code/./hittable.h \
   /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ In\ a\ Weekend/code/./sphere.h \
-  /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ In\ a\ Weekend/code/./camera.h
+  /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ In\ a\ Weekend/code/./camera.h \
+  /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ In\ a\ Weekend/code/./material.h

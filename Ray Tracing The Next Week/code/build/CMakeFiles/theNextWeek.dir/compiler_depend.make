@@ -256,7 +256,8 @@ CMakeFiles/theNextWeek.dir/RayTracing.cpp.o: ../RayTracing.cpp \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.0.0/include/mmintrin.h \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.0.0/include/mm_malloc.h \
   ../perlin.h \
-  ../moving_sphere.h
+  ../moving_sphere.h \
+  ../aarect.h
 
 
 ../moving_sphere.h:
@@ -480,6 +481,8 @@ CMakeFiles/theNextWeek.dir/RayTracing.cpp.o: ../RayTracing.cpp \
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/_ctermid.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/c++/v1/string:
+
+../aarect.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/sys/_types/_fd_copy.h:
 

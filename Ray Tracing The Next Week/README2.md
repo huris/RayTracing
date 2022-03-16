@@ -638,6 +638,466 @@ int main() {
 
 <img src="./images/Earth-mapped sphere.png"  style="zoom:40%;" />
 
+## 7. 矩形和光源
+
+**光源**是光线追踪里的一个关键组件。
+
+早期简单的光线追踪器使用抽象的光源，例如空间中点光源或直接光照。
+
+**现代方法更多的采用基于物理的光源，有位置和大小**。
+
+为了创建这样的光源，我们需要能够将任何常规的物体转换成在场景中发出光的东西。
+
+### 7.1 发光材质
+
+首先，需要制作一个发光材质，需要增加一个发光函数。
+
+`material.h`
+
+```c++
+class diffuse_light : public material  {
+    public:
+        diffuse_light(shared_ptr<texture> a) : emit(a) {}
+        diffuse_light(color c) : emit(make_shared<solid_color>(c)) {}
+
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+        ) const override {
+            return false;
+        }
+
+        virtual color emitted(double u, double v, const point3& p) const override {
+            return emit->value(u, v, p);
+        }
+
+    public:
+        shared_ptr<texture> emit;
+};
+```
+
+为了不去给每个不是光源的材质实现`emitted()`函数，这里并不使用纯虚函数，让函数默认返回黑色：
+
+`material.h`
+
+```c++
+class material {
+    public:
+        virtual color emitted(double u, double v, const point3& p) const {
+            return color(0,0,0);
+        }
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+        ) const = 0;
+};
+```
+
+### 7.2 对光线颜色函数增加背景色
+
+接下来需要一个纯黑的背景，并让所有光线都来自光源材质。
+
+要想实现它，需要在`ray_color`函数中加入一个背景色变量，然后由`emitted`函数产生新的颜色值。
+
+`RayTracing.cpp`
+
+```c++
+color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
+    hit_record rec;
+
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    if (depth <= 0)
+        return color(0,0,0);
+
+    // If the ray hits nothing, return the background color.
+    if (!world.hit(r, 0.001, infinity, rec))
+        return background;
+
+    ray scattered;
+    color attenuation;
+    color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+
+    if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+        return emitted;
+
+    return emitted + attenuation * ray_color(scattered, background, world, depth-1);
+}
+...
+
+int main() {
+    ...
+
+    point3 lookfrom;
+    point3 lookat;
+    auto vfov = 40.0;
+    auto aperture = 0.0;
+    color background(0,0,0);
+
+    switch (0) {
+        case 1:
+            world = random_scene();
+            background = color(0.70, 0.80, 1.00);
+            lookfrom = point3(13,2,3);
+            lookat = point3(0,0,0);
+            vfov = 20.0;
+            aperture = 0.1;
+            break;
+
+        case 2:
+            world = two_spheres();
+            background = color(0.70, 0.80, 1.00);
+            lookfrom = point3(13,2,3);
+            lookat = point3(0,0,0);
+            vfov = 20.0;
+            break;
+
+        case 3:
+            world = two_perlin_spheres();
+            background = color(0.70, 0.80, 1.00);
+            lookfrom = point3(13,2,3);
+            lookat = point3(0,0,0);
+            vfov = 20.0;
+            break;
+
+        default:
+        case 4:
+            world = earth();
+            background = color(0.70, 0.80, 1.00);
+            lookfrom = point3(13,2,3);
+            lookat = point3(0,0,0);
+            vfov = 20.0;
+            break;
+
+        default:
+        case 5:
+            background = color(0.0, 0.0, 0.0);
+            break;
+    }
+
+    ...
+                pixel_color += ray_color(r, background, world, max_depth);
+    ...
+}
+```
+
+由于删除了用于确定光线击中天空时的颜色代码，所以需要**为旧场景传如一个新的颜色值**（这里选择整个天空使用平坦的蓝白色），可以使用一个bool值来切换之前的天空框代码和新的纯色背景。
+
+### 7.3 创建矩形对象
+
+现在，可以加入一些矩形，矩形在人为建模环境时很方便使用（例如轴对齐的矩形）。
+
+首先有一个xy平面的矩形，这个平面根据它的z值来定义（例如$z=k$），一个轴对齐的矩形可以通过如下方式来进行定义（$x=x_0,x=x_1,y=y_0,y=y_1$）。
+
+<img src="./images/Ray rectangle intersection.jpg"  style="zoom:40%;" />
+
+为了检测是否有光线与这个矩形相交，首先需要判断光线与这个平面的交点。
+
+对于一条射线：$P(t)=A+tb$，当$z$值确定后，可以写为：$P_z(t)=A_z+tb_z$，解出：$t=\frac{k-A_z}{b_z}$
+
+一旦确定了$t$，可以将其带入$x$和$y$的方程：$x=A_x+tb_x,y=A_y+tb_y$
+
+当且仅当：$x_0<x<x_1, y_0<y<y_1$时，发生相交。
+
+由于矩形是**轴对齐的**，它们的边界框将有一个无限薄的边，当使用轴对齐的包围盒来划分它们时，会有精度问题。
+
+为了解决这个问题，需要对所有命中的对象都设置一个边界框，**在每个维度上都有一个有限的宽度**。
+
+因此，对于上面的矩形，**需要在无限薄的边填充一些盒子**。
+
+`aarect.h`
+
+```c++
+#ifndef AARECT_H
+#define AARECT_H
+
+#include "rtweekend.h"
+
+#include "hittable.h"
+
+class xy_rect : public hittable {
+    public:
+        xy_rect() {}
+
+        xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, 
+            shared_ptr<material> mat)
+            : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
+
+        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+            // The bounding box must have non-zero width in each dimension, so pad the Z
+            // dimension a small amount.
+            output_box = aabb(point3(x0,y0, k-0.0001), point3(x1, y1, k+0.0001));
+            return true;
+        }
+
+    public:
+        shared_ptr<material> mp;
+        double x0, x1, y0, y1, k;
+};
+
+#endif
+```
+
+相交函数：
+
+`aarect.h`
+
+```c++
+bool xy_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    auto t = (k-r.origin().z()) / r.direction().z();
+    if (t < t_min || t > t_max)
+        return false;
+    auto x = r.origin().x() + t*r.direction().x();
+    auto y = r.origin().y() + t*r.direction().y();
+    if (x < x0 || x > x1 || y < y0 || y > y1)
+        return false;
+    rec.u = (x-x0)/(x1-x0);
+    rec.v = (y-y0)/(y1-y0);
+    rec.t = t;
+    auto outward_normal = vec3(0, 0, 1);
+    rec.set_face_normal(r, outward_normal);
+    rec.mat_ptr = mp;
+    rec.p = r.at(t);
+    return true;
+}
+```
+
+### 7.4 将物体变成光源
+
+设置一个矩形为光源：
+
+`RayTracing.cpp`
+
+```c++
+hittable_list simple_light() {
+    hittable_list objects;
+
+    auto pertext = make_shared<noise_texture>(4);
+    objects.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
+    objects.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
+
+    auto difflight = make_shared<diffuse_light>(color(4,4,4));
+    objects.add(make_shared<xy_rect>(3, 5, 1, 3, -2, difflight));
+
+    return objects;
+}
+```
+
+新建一个场景，注意要设置背景为黑色：
+
+`RayTracing.cpp`
+
+```c++
+#include "rtweekend.h"
+
+#include "camera.h"
+#include "color.h"
+#include "hittable_list.h"
+#include "material.h"
+#include "moving_sphere.h"
+#include "sphere.h"
+#include "aarect.h"
+
+#include <iostream>
+...
+int main() {
+    ...
+    switch (0) {
+        ...
+        default:
+        case 5:
+            world = simple_light();
+            samples_per_pixel = 400;
+            background = color(0,0,0);
+            lookfrom = point3(26,3,6);
+            lookat = point3(0,2,0);
+            vfov = 20.0;
+            break;
+    }
+    ...
+```
+
+得到结果：
+
+<img src="./images/Scene with rectangle light source.png"  style="zoom:40%;" />
+
+注意现在的光比$(1,1,1)$要亮，所以这个亮度足够它去照亮其他东西了。
+
+同样的方法，也可做一个圆形的光源：
+
+`RayTracing.cpp`
+
+```c++
+hittable_list simple_light() {
+    hittable_list objects;
+
+    auto pertext = make_shared<noise_texture>(4);
+    objects.add(make_shared<sphere>(point3(0, -1000, 0), 1000, make_shared<lambertian>(pertext)));
+    objects.add(make_shared<sphere>(point3(0, 2, 0), 2, make_shared<lambertian>(pertext)));
+
+    auto difflight = make_shared<diffuse_light>(color(4, 4, 4));
+    objects.add(make_shared<xy_rect>(3, 5, 1, 3, -2, difflight));
+    objects.add(make_shared<sphere>(point3(0, 2, 3), 2, difflight));
+
+    return objects;
+}
+```
+
+<img src="./images/Scene with rectangle and sphere light sources.png"  style="zoom:40%;" />
+
+### 7.5 更多轴对齐的矩形
+
+增加另外两个轴，然后形成一个**Cornell盒子**。
+
+`arrect.h`
+
+```c++
+class xz_rect : public hittable {
+public:
+    xz_rect() {}
+
+    xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> mat)
+            : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+
+    virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+    virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+        // The bounding box must have non-zero width in each dimension, so pad the Y
+        // dimension a small amount.
+        output_box = aabb(point3(x0,k-0.0001,z0), point3(x1, k+0.0001, z1));
+        return true;
+    }
+
+public:
+    shared_ptr<material> mp;
+    double x0, x1, z0, z1, k;
+};
+
+bool xz_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    auto t = (k - r.origin().y()) / r.direction().y();
+    if (t < t_min || t > t_max) return false;
+
+    auto x = r.origin().x() + t * r.direction().x();
+    auto z = r.origin().z() + t * r.direction().z();
+    if (x < x0 || x > x1 || z < z0 || z > z1) return false;
+
+    rec.u = (x - x0) / (x1 - x0);
+    rec.v = (z - z0) / (z1 - z0);
+    rec.t = t;
+
+    auto outward_normal = vec3(0, 1, 0);
+    rec.set_face_normal(r, outward_normal);
+    rec.mat_ptr = mp;
+    rec.p = r.at(t);
+
+    return true;
+}
+
+
+class yz_rect : public hittable {
+public:
+    yz_rect() {}
+
+    yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> mat)
+            : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+
+    virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+    virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+        // The bounding box must have non-zero width in each dimension, so pad the X
+        // dimension a small amount.
+        output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
+        return true;
+    }
+
+public:
+    shared_ptr<material> mp;
+    double y0, y1, z0, z1, k;
+};
+
+bool yz_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    auto t = (k - r.origin().x()) / r.direction().x();
+    if (t < t_min || t > t_max) return false;
+
+    auto y = r.origin().y() + t * r.direction().y();
+    auto z = r.origin().z() + t * r.direction().z();
+    if (y < y0 || y > y1 || z < z0 || z > z1) return false;
+
+    rec.u = (y - y0) / (y1 - y0);
+    rec.v = (z - z0) / (z1 - z0);
+    rec.t = t;
+
+    auto outward_normal = vec3(1, 0, 0);
+    rec.set_face_normal(r, outward_normal);
+    rec.mat_ptr = mp;
+    rec.p = r.at(t);
+    
+    return true;
+}
+```
+
+### 7.6 创建一个空的Cornell盒子
+
+`RayTracing.cpp`
+
+```c++
+hittable_list cornell_box() {
+    hittable_list objects;
+
+    auto red   = make_shared<lambertian>(color(.65, .05, .05));
+    auto white = make_shared<lambertian>(color(.73, .73, .73));
+    auto green = make_shared<lambertian>(color(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(color(15, 15, 15));
+
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+
+    return objects;
+}
+```
+
+`RayTracing.cpp`
+
+```c++
+int main() {
+    ...
+    switch (0) {
+        ...
+        default:
+        case 5:
+            ...
+            break;
+
+        default:
+        case 6:
+            world = cornell_box();
+            aspect_ratio = 1.0;
+            image_width = 600;
+            samples_per_pixel = 200;
+            background = color(0,0,0);
+            lookfrom = point3(278, 278, -800);
+            lookat = point3(278, 278, 0);
+            vfov = 40.0;
+            break;
+    }
+    ...
+```
+
+得到结果：
+
+<img src="./images/Empty Cornell box.png"  style="zoom:40%;" />
+
+这张图片有很多噪声，因为光源很小。
+
+
+
+
+
+
+
 
 
 

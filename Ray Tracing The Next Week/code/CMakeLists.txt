@@ -21,4 +21,5 @@ add_executable(theNextWeek
         bvh.h
         texture.h
         perlin.h
-        rtw_stb_image.h)
+        rtw_stb_image.h
+        aarect.h)

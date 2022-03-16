@@ -249,6 +249,7 @@ CMakeFiles/theNextWeek.dir/RayTracing.cpp.o: ../RayTracing.cpp \
   ../camera.h \
   ../material.h \
   ../texture.h \
+  ../perlin.h \
   ../moving_sphere.h
 
 
@@ -599,6 +600,8 @@ CMakeFiles/theNextWeek.dir/RayTracing.cpp.o: ../RayTracing.cpp \
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/i386/types.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/c++/v1/stdlib.h:
+
+../perlin.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/c++/v1/stdint.h:
 

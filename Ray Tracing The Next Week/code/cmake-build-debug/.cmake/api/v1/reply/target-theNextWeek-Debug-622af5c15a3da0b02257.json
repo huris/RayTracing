@@ -118,7 +118,8 @@
 				10,
 				11,
 				12,
-				13
+				13,
+				14
 			]
 		}
 	],
@@ -193,6 +194,11 @@
 		{
 			"backtrace" : 1,
 			"path" : "texture.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "perlin.h",
 			"sourceGroupIndex" : 1
 		}
 	],

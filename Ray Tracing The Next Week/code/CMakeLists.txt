@@ -19,4 +19,5 @@ add_executable(theNextWeek
         moving_sphere.h
         aabb.h
         bvh.h
-        texture.h)
+        texture.h
+        perlin.h)

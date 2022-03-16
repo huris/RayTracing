@@ -482,5 +482,169 @@ class noise_texture : public texture {
 
 <img src="./images/Perlin noise, marbled texture.png"  style="zoom:40%;" />
 
+## 6. 图片纹理映射
+
+可以使用射入点$p$来映射类似大理石那样程序生成的纹理，也可以读取一张图片，并将一个2维$(u,v)$坐标系映射在图片上。
+
+使用$(u,v)$坐标的一个直接想法是将$u$与$v$调整比例后取整，然后将其对应到像素坐标$(i,j)$上。但是这个方法很糟糕，因为每次照片分辨率发生变化时，都需要修改代码。
+
+图形学一般采用纹理坐标系代替图像坐标系，即使用$[0,1]$之间的小数来表示图像中的位置。
+
+例如，对于一张宽度为$N_x$高度为$N_y$的图像中的像素$(i,j)$，其像素坐标系下的坐标为：$u=\frac{i}{N_x-1},v=\frac{j}{N_y-1}$
+
+对于`hattable`来说，需要在`hit_record`中加入$u$和$v$的记录。
+
+### 6.1 存储图片纹理数据
+
+现在需要新建一个texture类来存放图片，这里使用图片工具库[stb_image](https://github.com/nothings/stb)，下载`stb_image.h`后放入`external`文件夹。
+
+它将图片信息读入一个无符号字符类型（unsigned char）的大数组中，将RGB值规定在范围$[0,255]$，从全黑到全白。
+
+`texture.h`
+
+```c++
+#include "rtweekend.h"
+#include "rtw_stb_image.h"
+#include "perlin.h"
+
+#include <iostream>
+
+...
+
+class image_texture : public texture {
+    public:
+        const static int bytes_per_pixel = 3;
+
+        image_texture()
+          : data(nullptr), width(0), height(0), bytes_per_scanline(0) {}
+
+        image_texture(const char* filename) {
+            auto components_per_pixel = bytes_per_pixel;
+
+            data = stbi_load(
+                filename, &width, &height, &components_per_pixel, components_per_pixel);
+
+            if (!data) {
+                std::cerr << "ERROR: Could not load texture image file '" << filename << "'.\n";
+                width = height = 0;
+            }
+
+            bytes_per_scanline = bytes_per_pixel * width;
+        }
+
+        ~image_texture() {
+            delete data;
+        }
+
+        virtual color value(double u, double v, const vec3& p) const override {
+            // If we have no texture data, then return solid cyan as a debugging aid.
+            if (data == nullptr)
+                return color(0,1,1);
+
+            // Clamp input texture coordinates to [0,1] x [1,0]
+            u = clamp(u, 0.0, 1.0);
+            v = 1.0 - clamp(v, 0.0, 1.0);  // Flip V to image coordinates
+
+            auto i = static_cast<int>(u * width);
+            auto j = static_cast<int>(v * height);
+
+            // Clamp integer mapping, since actual coordinates should be less than 1.0
+            if (i >= width)  i = width-1;
+            if (j >= height) j = height-1;
+
+            const auto color_scale = 1.0 / 255.0;
+            auto pixel = data + j*bytes_per_scanline + i*bytes_per_pixel;
+
+            return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);
+        }
+
+    private:
+        unsigned char *data;
+        int width, height;
+        int bytes_per_scanline;
+};
+```
+
+`rtw_stb_image.h`
+
+```c++
+#ifndef RTWEEKEND_STB_IMAGE_H
+#define RTWEEKEND_STB_IMAGE_H
+
+// Disable pedantic warnings for this external library.
+#ifdef _MSC_VER
+    // Microsoft Visual C++ Compiler
+    #pragma warning (push, 0)
+#endif
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "external/stb_image.h"
+
+// Restore warning levels.
+#ifdef _MSC_VER
+    // Microsoft Visual C++ Compiler
+    #pragma warning (pop)
+#endif
+
+#endif
+```
+
+### 6.2 使用图片纹理
+
+这里选用一张地球的纹理：
+
+<img src="./images/earthmap.jpg"  style="zoom:60%;" />
+
+修改代码，读取一张图片并将其指定为漫反射材质。
+
+`RayTracing.cpp`
+
+```c++
+hittable_list earth() {
+    auto earth_texture = make_shared<image_texture>("earthmap.jpg");
+    auto earth_surface = make_shared<lambertian>(earth_texture);
+    auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface);
+
+    return hittable_list(globe);
+}
+```
+
+这里可以感受一下texture类的魅力，可以将任意一种类的纹理（贴图）运用到lambertian材质上，同时这里lambertian材质不需要关心其输入的是图片还是其他。
+
+`RayTracing.cpp`
+
+```c++
+int main() {
+    ...
+    switch (0) {
+        ...
+        default:
+        case 3:
+            ...
+        default:
+        case 4:
+            world = earth();
+            lookfrom = point3(13,2,3);
+            lookat = point3(0,0,0);
+            vfov = 20.0;
+            break;
+    }
+    ...
+```
+
+如果生成的图片是一张青色的球体图，则说明`stb_image`没有加载`earthmap.jpg`，
+
+确保将`earthmap.jpg`的路径设置正确（mac系统可能要设置成完整路径）。
+
+<img src="./images/Earth-mapped sphere.png"  style="zoom:40%;" />
+
+
+
+
+
+
+
+
+
 
 

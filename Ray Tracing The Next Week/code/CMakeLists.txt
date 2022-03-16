@@ -23,4 +23,5 @@ add_executable(theNextWeek
         perlin.h
         rtw_stb_image.h
         aarect.h
-        box.h)
+        box.h
+        constant_medium.h)

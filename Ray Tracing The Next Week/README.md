@@ -769,7 +769,7 @@ bool bvh_node::hit(const ray &r, double t_min, double t_max, hit_record &rec) co
 ...
 
 bvh_node::bvh_node(
-    std::vector<shared_ptr<hittable>>& src_objects,
+    const std::vector<shared_ptr<hittable>>& src_objects,
     size_t start, size_t end, double time0, double time1
 ) {
     auto objects = src_objects; // Create a modifiable array of the source scene objects
@@ -2217,3 +2217,567 @@ int main() {
 <img src="./images/Empty Cornell box.png"  style="zoom:40%;" />
 
 这张图片有很多噪声，因为光源很小。
+
+## 8. 实例
+
+Cornell盒子里通常由两个物体，这些是相对于壁面旋转的。
+
+首先，创建一个包含6个平面组成的轴对齐块元素：
+
+`box.h`
+
+```c++
+#ifndef THENEXTWEEK_BOX_H
+#define THENEXTWEEK_BOX_H
+
+#include "rtweekend.h"
+
+#include "aarect.h"
+#include "hittable_list.h"
+
+class box : public hittable  {
+public:
+    box() {}
+    box(const point3& p0, const point3& p1, shared_ptr<material> ptr);
+
+    virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+    virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+        output_box = aabb(box_min, box_max);
+        return true;
+    }
+
+public:
+    point3 box_min;
+    point3 box_max;
+    hittable_list sides;
+};
+
+box::box(const point3& p0, const point3& p1, shared_ptr<material> ptr) {
+    box_min = p0;
+    box_max = p1;
+
+    sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr));
+    sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
+
+    sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr));
+    sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
+
+    sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr));
+    sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
+}
+
+bool box::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    return sides.hit(r, t_min, t_max, rec);
+}
+
+#endif //THENEXTWEEK_BOX_H
+```
+
+之后添加两个物体：
+
+`RayTracing.cpp`
+
+```c++
+#include "box.h"
+...
+objects.add(make_shared<box>(point3(130, 0, 65), point3(295, 165, 230), white));
+objects.add(make_shared<box>(point3(265, 0, 295), point3(430, 330, 460), white));
+```
+
+得到结果：
+
+<img src="./images/Cornell box with two blocks.png"  style="zoom:40%;" />
+
+现在有了两个长方体，为了让它们更接近正宗的Cornell盒子，需要让它们旋转一下。
+
+光线追踪中，通常使用**实例（Instance）**来完成这个工作。
+
+实例是一种经过旋转或者平移等操作的几何图元，这在光线追踪中更加简单，因为我们不需要移动任何东西，取代而之是将光线移动到相反的方向。
+
+例如，对于一个平移操作，我们可以取原点的粉色方框，将它所有的x分量加$2$，或者（就像我们在光线追踪中经常做的那样）让方框保持原样，但是在它的`hit`过程中，将射线原点的方向减去$2$。
+
+<img src="./images/Ray-box intersection with moved ray vs box.jpg"  style="zoom:70%;" />
+
+### 8.1 实例移动
+
+移动`hittable`类的translate代码如下：
+
+`hittable.h`
+
+```c++
+class translate : public hittable {
+    public:
+        translate(shared_ptr<hittable> p, const vec3& displacement)
+            : ptr(p), offset(displacement) {}
+
+        virtual bool hit(
+            const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override;
+
+    public:
+        shared_ptr<hittable> ptr;
+        vec3 offset;
+};
+
+bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    ray moved_r(r.origin() - offset, r.direction(), r.time());
+    if (!ptr->hit(moved_r, t_min, t_max, rec))
+        return false;
+
+    rec.p += offset;
+    rec.set_face_normal(moved_r, rec.normal);
+
+    return true;
+}
+
+bool translate::bounding_box(double time0, double time1, aabb& output_box) const {
+    if (!ptr->bounding_box(time0, time1, output_box))
+        return false;
+
+    output_box = aabb(
+        output_box.min() + offset,
+        output_box.max() + offset);
+
+    return true;
+}
+```
+
+### 8.2 实例旋转
+
+旋转可能就没有那么容易理解或者列出方程。
+
+一个常用的图像技巧是**将所有的旋转都当成是绕$xyz$轴旋转**。
+
+首先，绕$z$轴旋转，这样只会改变$xy$而不会改变$z$值。
+
+<img src="./images/Rotation about the Z axis.jpg"  style="zoom:70%;" />
+
+这里包含了一些三角几何，绕$z$轴逆时针旋转的公式如下：
+
+- $x'=\cos(\theta)\cdot x-\sin(\theta)\cdot{y}$
+- $y'=\sin(\theta)\cdot x+\cos(\theta)\cdot{y}$
+
+这个公式对任何$\theta$都成立，不需要考虑象限问题，如果要顺时针旋转，只需把$\theta$改为$-\theta$即可。
+
+类似的，绕$y$轴旋转的公式如下：
+
+- $x'=\cos(\theta)\cdot x+\sin(\theta)\cdot{z}$
+- $y'=-\sin(\theta)\cdot x+\cos(\theta)\cdot{z}$
+
+绕$x$轴旋转的公式如下：
+
+- $y'=\cos(\theta)\cdot y-\sin(\theta)\cdot{z}$
+- $z'=\sin(\theta)\cdot y+\cos(\theta)\cdot{z}$
+
+与平移变换不同，旋转时表面法向量也发生了变化，所以在计算完`hit`函数后还要重新计算法向量。
+
+`hittable.h`
+
+```c++
+class rotate_y : public hittable {
+public:
+    rotate_y(shared_ptr<hittable> p, double angle);
+
+    virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+    virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+        output_box = bbox;
+        return hasbox;
+    }
+
+public:
+    shared_ptr<hittable> ptr;
+    double sin_theta;
+    double cos_theta;
+    bool hasbox;
+    aabb bbox;
+};
+
+rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
+    auto radians = degrees_to_radians(angle);
+    sin_theta = sin(radians);
+    cos_theta = cos(radians);
+    hasbox = ptr->bounding_box(0, 1, bbox);
+
+    point3 min( infinity,  infinity,  infinity);
+    point3 max(-infinity, -infinity, -infinity);
+
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 2; k++) {
+                auto x = i * bbox.max().x() + (1 - i) * bbox.min().x();
+                auto y = j * bbox.max().y() + (1 - j) * bbox.min().y();
+                auto z = k * bbox.max().z() + (1 - k) * bbox.min().z();
+
+                auto newx =  cos_theta * x + sin_theta * z;
+                auto newz = -sin_theta * x + cos_theta * z;
+
+                vec3 tester(newx, y, newz);
+
+                for (int c = 0; c < 3; c++) {
+                    min[c] = fmin(min[c], tester[c]);
+                    max[c] = fmax(max[c], tester[c]);
+                }
+            }
+        }
+    }
+
+    bbox = aabb(min, max);
+}
+
+bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    auto origin = r.origin();
+    auto direction = r.direction();
+
+    origin[0] = cos_theta * r.origin()[0] - sin_theta * r.origin()[2];
+    origin[2] = sin_theta * r.origin()[0] + cos_theta * r.origin()[2];
+
+    direction[0] = cos_theta * r.direction()[0] - sin_theta * r.direction()[2];
+    direction[2] = sin_theta * r.direction()[0] + cos_theta * r.direction()[2];
+
+    ray rotated_r(origin, direction, r.time());
+
+    if (!ptr->hit(rotated_r, t_min, t_max, rec)) return false;
+
+    auto p = rec.p;
+    auto normal = rec.normal;
+
+    p[0] =  cos_theta * rec.p[0] + sin_theta * rec.p[2];
+    p[2] = -sin_theta * rec.p[0] + cos_theta * rec.p[2];
+
+    normal[0] =  cos_theta * rec.normal[0] + sin_theta * rec.normal[2];
+    normal[2] = -sin_theta * rec.normal[0] + cos_theta * rec.normal[2];
+
+    rec.p = p;
+    rec.set_face_normal(rotated_r, normal);
+
+    return true;
+}
+```
+
+改变Cornell盒子：
+
+`RayTracing.cpp`
+
+```c++
+shared_ptr<hittable> box1 = make_shared<box>(point3(0, 0, 0), point3(165, 330, 165), white);
+box1 = make_shared<rotate_y>(box1, 15);
+box1 = make_shared<translate>(box1, vec3(265,0,295));
+objects.add(box1);
+
+shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
+box2 = make_shared<rotate_y>(box2, -18);
+box2 = make_shared<translate>(box2, vec3(130,0,65));
+objects.add(box2);
+```
+
+得到结果：
+
+<img src="./images/Standard Cornell box scene.png"  style="zoom:40%;" />
+
+## 9. 体积体
+
+给光线追踪器加入**烟/雾/水汽**是一件很cool的事情，这些东西称为**体积体（Volumes）**或**可参与介质（participating media）**。**次表面散射（sub surface scatter， SSS）**是另一个不错的特性，有点像物体内部的浓雾。
+
+体积体和平面表面是完全不同的两种东西，但是可以通过将体积体表示为一个随机表面（例如，**一团烟雾可以用一个概率上不确定在什么位置的平面来代替**）。
+
+首先生成一个**固定密度的体积体**，光线可以在体积体内部发生散射，也可以像下图那条射线一样直接穿出去。体积体越薄越透明，直接传过去的情况就越有可能发生，光线在体积体中直线传播所经过的距离也决定了光线采用图中哪种方式通过体积体。
+
+<img src="./images/Ray volume interaction.jpg"  style="zoom:60%;" />
+
+当光线射入体积体时，它可能在任意一点发生散射。体积体越浓，越可能发生散射。
+
+在任意微小的距离差$\triangle L$发生散射的概率：$probability = C \cdot \triangle L$，其中$C$是体积体的光学密度比例常数。
+
+经过一系列不同的等式运算，可以随机得到一个光线发生散射的距离值，根据这个距离来说，散射点在体积体外，则我们认为没有相交，不调用`hit`函数。
+
+对于一个静态的体积体来说，只需要它的密度$C$和边界。
+
+用另一个`hittable`物体来表示体积体边界：
+
+`constant_medium.h`
+
+```c++
+#ifndef CONSTANT_MEDIUM_H
+#define CONSTANT_MEDIUM_H
+
+#include "rtweekend.h"
+
+#include "hittable.h"
+#include "material.h"
+#include "texture.h"
+
+class constant_medium : public hittable {
+    public:
+        constant_medium(shared_ptr<hittable> b, double d, shared_ptr<texture> a)
+            : boundary(b),
+              neg_inv_density(-1/d),
+              phase_function(make_shared<isotropic>(a))
+            {}
+
+        constant_medium(shared_ptr<hittable> b, double d, color c)
+            : boundary(b),
+              neg_inv_density(-1/d),
+              phase_function(make_shared<isotropic>(c))
+            {}
+
+        virtual bool hit(
+            const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+            return boundary->bounding_box(time0, time1, output_box);
+        }
+
+    public:
+        shared_ptr<hittable> boundary;
+        shared_ptr<material> phase_function;
+        double neg_inv_density;
+};
+
+#endif
+```
+
+对于散射方向来说，采用**各项同性（isotropic）的随机单位向量**计算：
+
+`material.h`
+
+```c++
+class isotropic : public material {
+    public:
+        isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
+        isotropic(shared_ptr<texture> a) : albedo(a) {}
+
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+        ) const override {
+            scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
+            attenuation = albedo->value(rec.u, rec.v, rec.p);
+            return true;
+        }
+
+    public:
+        shared_ptr<texture> albedo;
+};
+```
+
+`hit`函数为：
+
+`constant_medium.h`
+
+```c++
+bool constant_medium::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    // Print occasional samples when debugging. To enable, set enableDebug true.
+    const bool enableDebug = false;
+    const bool debugging = enableDebug && random_double() < 0.00001;
+
+    hit_record rec1, rec2;
+
+    if (!boundary->hit(r, -infinity, infinity, rec1))
+        return false;
+
+    if (!boundary->hit(r, rec1.t+0.0001, infinity, rec2))
+        return false;
+
+    if (debugging) std::cerr << "\nt_min=" << rec1.t << ", t_max=" << rec2.t << '\n';
+
+    if (rec1.t < t_min) rec1.t = t_min;
+    if (rec2.t > t_max) rec2.t = t_max;
+
+    if (rec1.t >= rec2.t)
+        return false;
+
+    if (rec1.t < 0)
+        rec1.t = 0;
+
+    const auto ray_length = r.direction().length();
+    const auto distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
+    const auto hit_distance = neg_inv_density * log(random_double());
+
+    if (hit_distance > distance_inside_boundary)
+        return false;
+
+    rec.t = rec1.t + hit_distance / ray_length;
+    rec.p = r.at(rec.t);
+
+    if (debugging) {
+        std::cerr << "hit_distance = " <<  hit_distance << '\n'
+                  << "rec.t = " <<  rec.t << '\n'
+                  << "rec.p = " <<  rec.p << '\n';
+    }
+
+    rec.normal = vec3(1,0,0);  // arbitrary
+    rec.front_face = true;     // also arbitrary
+    rec.mat_ptr = phase_function;
+
+    return true;
+}
+```
+
+一定要小心与边界相关的逻辑，因为要确保当射线原点在体积体内部时，光线依然会发生散射。
+
+在云中，光线反复发生散射，这是一种很常见的现象。
+
+另外，上面的代码只能确保射线只会射入体积体一次，之后再也不进入体积体的情况（即，它假定体积体的边界是一个凸几何体，所以这个狭义的实现只对球体或长方体这样的物体生效，对于当中有洞的那种形状，例如甜甜圈就不行）。
+
+### 9.2 使用烟和雾来渲染一个Cornell盒子
+
+如果将两个长方体替换为烟和雾（深色与浅色的粒子）并使用一个更大的灯光（同时更加昏暗以至于不会炸了这个场景）让场景更快的融合在一起。
+
+`RayTracing.cpp`
+
+```c++
+#include "constant_medium.h"
+...
+
+hittable_list cornell_smoke() {
+    hittable_list objects;
+
+    auto red   = make_shared<lambertian>(color(.65, .05, .05));
+    auto white = make_shared<lambertian>(color(.73, .73, .73));
+    auto green = make_shared<lambertian>(color(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(color(7, 7, 7));
+
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    objects.add(make_shared<xz_rect>(113, 443, 127, 432, 554, light));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+
+    shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
+    box1 = make_shared<rotate_y>(box1, 15);
+    box1 = make_shared<translate>(box1, vec3(265,0,295));
+
+    shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
+    box2 = make_shared<rotate_y>(box2, -18);
+    box2 = make_shared<translate>(box2, vec3(130,0,65));
+
+    objects.add(make_shared<constant_medium>(box1, 0.01, color(0,0,0)));
+    objects.add(make_shared<constant_medium>(box2, 0.01, color(1,1,1)));
+
+    return objects;
+}
+
+...
+
+int main() {
+    ...
+    switch (0) {
+        ...
+        default:
+        case 7:
+            world = cornell_smoke();
+            aspect_ratio = 1.0;
+            image_width = 600;
+            samples_per_pixel = 200;
+            lookfrom = point3(278, 278, -800);
+            lookat = point3(278, 278, 0);
+            vfov = 40.0;
+            break;
+    ...
+}
+```
+
+得到结果：
+
+<img src="./images/Cornell box with blocks of smoke.png"  style="zoom:40%;" />
+
+## 10. 包含所有物体的场景
+
+使用一个薄雾盖住所有东西，并加入一个蓝色的次表面反射球体。
+
+现在这个渲染器最大的局限就是没有阴影。
+
+```c++
+...
+#include "bvh.h"
+...
+
+hittable_list final_scene() {
+    hittable_list boxes1;
+    auto ground = make_shared<lambertian>(color(0.48, 0.83, 0.53));
+
+    const int boxes_per_side = 20;
+    for (int i = 0; i < boxes_per_side; i++) {
+        for (int j = 0; j < boxes_per_side; j++) {
+            auto w = 100.0;
+            auto x0 = -1000.0 + i*w;
+            auto z0 = -1000.0 + j*w;
+            auto y0 = 0.0;
+            auto x1 = x0 + w;
+            auto y1 = random_double(1,101);
+            auto z1 = z0 + w;
+
+            boxes1.add(make_shared<box>(point3(x0,y0,z0), point3(x1,y1,z1), ground));
+        }
+    }
+
+    hittable_list objects;
+
+    objects.add(make_shared<bvh_node>(boxes1, 0, 1));
+
+    auto light = make_shared<diffuse_light>(color(7, 7, 7));
+    objects.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
+
+    auto center1 = point3(400, 400, 200);
+    auto center2 = center1 + vec3(30,0,0);
+    auto moving_sphere_material = make_shared<lambertian>(color(0.7, 0.3, 0.1));
+    objects.add(make_shared<moving_sphere>(center1, center2, 0, 1, 50, moving_sphere_material));
+
+    objects.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
+    objects.add(make_shared<sphere>(
+        point3(0, 150, 145), 50, make_shared<metal>(color(0.8, 0.8, 0.9), 1.0)
+    ));
+
+    auto boundary = make_shared<sphere>(point3(360,150,145), 70, make_shared<dielectric>(1.5));
+    objects.add(boundary);
+    objects.add(make_shared<constant_medium>(boundary, 0.2, color(0.2, 0.4, 0.9)));
+    boundary = make_shared<sphere>(point3(0, 0, 0), 5000, make_shared<dielectric>(1.5));
+    objects.add(make_shared<constant_medium>(boundary, .0001, color(1,1,1)));
+
+    auto emat = make_shared<lambertian>(make_shared<image_texture>("earthmap.jpg"));
+    objects.add(make_shared<sphere>(point3(400,200,400), 100, emat));
+    auto pertext = make_shared<noise_texture>(0.1);
+    objects.add(make_shared<sphere>(point3(220,280,300), 80, make_shared<lambertian>(pertext)));
+
+    hittable_list boxes2;
+    auto white = make_shared<lambertian>(color(.73, .73, .73));
+    int ns = 1000;
+    for (int j = 0; j < ns; j++) {
+        boxes2.add(make_shared<sphere>(point3::random(0,165), 10, white));
+    }
+
+    objects.add(make_shared<translate>(
+        make_shared<rotate_y>(
+            make_shared<bvh_node>(boxes2, 0.0, 1.0), 15),
+            vec3(-100,270,395)
+        )
+    );
+
+    return objects;
+}
+
+int main() {
+    ...
+    switch (0) {
+        ...
+        default:
+        case 8:
+            world = final_scene();
+            aspect_ratio = 1.0;
+            image_width = 800;
+            samples_per_pixel = 10000;
+            background = color(0,0,0);
+            lookfrom = point3(478, 278, -600);
+            lookat = point3(278, 278, 0);
+            vfov = 40.0;
+            break;
+    ...
+}
+```
+
+结果如下，每个像素跑10000根光线：
+
+<img src="./images/Final scene.png"  style="zoom:40%;" />

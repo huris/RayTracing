@@ -256,4 +256,6 @@ CMakeFiles/theNextWeek.dir/RayTracing.cpp.o: \
   /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ The\ Next\ Week/code/./perlin.h \
   /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ The\ Next\ Week/code/./moving_sphere.h \
   /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ The\ Next\ Week/code/./aarect.h \
-  /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ The\ Next\ Week/code/./box.h
+  /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ The\ Next\ Week/code/./box.h \
+  /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ The\ Next\ Week/code/./constant_medium.h \
+  /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ The\ Next\ Week/code/./bvh.h

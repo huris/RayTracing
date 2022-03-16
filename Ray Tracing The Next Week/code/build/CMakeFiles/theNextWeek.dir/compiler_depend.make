@@ -258,8 +258,14 @@ CMakeFiles/theNextWeek.dir/RayTracing.cpp.o: ../RayTracing.cpp \
   ../perlin.h \
   ../moving_sphere.h \
   ../aarect.h \
-  ../box.h
+  ../box.h \
+  ../constant_medium.h \
+  ../bvh.h
 
+
+../bvh.h:
+
+../constant_medium.h:
 
 ../box.h:
 

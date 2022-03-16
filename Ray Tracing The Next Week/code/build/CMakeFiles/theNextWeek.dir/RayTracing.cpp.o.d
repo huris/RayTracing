@@ -255,4 +255,5 @@ CMakeFiles/theNextWeek.dir/RayTracing.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.0.0/include/mm_malloc.h \
   /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ The\ Next\ Week/code/./perlin.h \
   /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ The\ Next\ Week/code/./moving_sphere.h \
-  /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ The\ Next\ Week/code/./aarect.h
+  /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ The\ Next\ Week/code/./aarect.h \
+  /Users/huben/Desktop/Huris/MyGrowthPath/Computer\ Graphics/RayTracing/Ray\ Tracing\ The\ Next\ Week/code/./box.h

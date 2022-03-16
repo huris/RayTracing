@@ -2507,9 +2507,9 @@ int main(){
 }
 ```
 
-得到结果：
+得到结果：**跑了十个小时。**
 
-
+<img src="./images/Final scene.png"  style="zoom:30%;" />
 
 这里的玻璃球没有阴影，使得它们看上去跟浮在空中一样。
 

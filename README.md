@@ -12,11 +12,15 @@
 
 https://raytracing.github.io/books/RayTracingInOneWeekend.html
 
+<img src="./Ray Tracing In a Weekend/images/Final scene.png"  style="zoom:30%;" />
+
 ### Ray Tracing: The Next Week
 
-增加纹理，立体（例如雾），矩形，实物，光源，BVH加速
+增加纹理，体积体（例如烟雾），矩形，实例，光源，BVH加速
 
 https://raytracing.github.io/books/RayTracingTheNextWeek.html
+
+<img src="./Ray Tracing The Next Week/images/Final scene.png"  style="zoom:40%;" />
 
 ### Ray Tracing: The Rest Of Your Life
 

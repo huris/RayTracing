@@ -241,12 +241,15 @@ CMakeFiles/theNextWeek.dir/RayTracing.cpp.o: ../RayTracing.cpp \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/_types/_nl_item.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/c++/v1/__bsd_locale_defaults.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/c++/v1/bitset \
-  ../color.h \
-  ../hittable_list.h \
+  ../box.h \
+  ../aarect.h \
   ../hittable.h \
   ../aabb.h \
-  ../sphere.h \
+  ../hittable_list.h \
+  ../bvh.h \
   ../camera.h \
+  ../color.h \
+  ../constant_medium.h \
   ../material.h \
   ../texture.h \
   ../rtw_stb_image.h \
@@ -257,19 +260,10 @@ CMakeFiles/theNextWeek.dir/RayTracing.cpp.o: ../RayTracing.cpp \
   /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.0.0/include/mm_malloc.h \
   ../perlin.h \
   ../moving_sphere.h \
-  ../aarect.h \
-  ../box.h \
-  ../constant_medium.h \
-  ../bvh.h
+  ../sphere.h
 
 
-../bvh.h:
-
-../constant_medium.h:
-
-../box.h:
-
-../moving_sphere.h:
+../sphere.h:
 
 /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.0.0/include/emmintrin.h:
 
@@ -279,9 +273,15 @@ CMakeFiles/theNextWeek.dir/RayTracing.cpp.o: ../RayTracing.cpp \
 
 ../texture.h:
 
+../constant_medium.h:
+
 ../camera.h:
 
-../sphere.h:
+../bvh.h:
+
+../moving_sphere.h:
+
+../box.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/sys/_types/_fsblkcnt_t.h:
 

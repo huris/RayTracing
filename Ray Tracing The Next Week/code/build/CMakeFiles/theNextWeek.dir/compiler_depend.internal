@@ -242,12 +242,15 @@ CMakeFiles/theNextWeek.dir/RayTracing.cpp.o
  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/_types/_nl_item.h
  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/c++/v1/__bsd_locale_defaults.h
  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk/usr/include/c++/v1/bitset
- /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/color.h
- /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/hittable_list.h
+ /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/box.h
+ /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/aarect.h
  /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/hittable.h
  /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/aabb.h
- /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/sphere.h
+ /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/hittable_list.h
+ /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/bvh.h
  /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/camera.h
+ /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/color.h
+ /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/constant_medium.h
  /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/material.h
  /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/texture.h
  /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/rtw_stb_image.h
@@ -258,8 +261,5 @@ CMakeFiles/theNextWeek.dir/RayTracing.cpp.o
  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.0.0/include/mm_malloc.h
  /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/perlin.h
  /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/moving_sphere.h
- /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/aarect.h
- /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/box.h
- /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/constant_medium.h
- /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/bvh.h
+ /Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Next Week/code/sphere.h
 

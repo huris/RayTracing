@@ -1,14 +1,3 @@
-//==============================================================================================
-// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
-//
-// To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is
-// distributed without any warranty.
-//
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
-// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-//==============================================================================================
-
 #include "rtweekend.h"
 
 #include "box.h"
@@ -287,7 +276,7 @@ int main() {
     auto aperture = 0.0;
     color background(0,0,0);
 
-    switch (4) {
+    switch (0) {
         case 1:
             world = random_scene();
             background = color(0.70, 0.80, 1.00);
@@ -354,7 +343,7 @@ int main() {
             world = final_scene();
             aspect_ratio = 1.0;
             image_width = 800;
-            samples_per_pixel = 10;
+            samples_per_pixel = 10000;
             lookfrom = point3(478, 278, -600);
             lookat = point3(278, 278, 0);
             vfov = 40.0;

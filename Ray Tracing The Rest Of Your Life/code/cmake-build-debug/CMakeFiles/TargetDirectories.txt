@@ -1,0 +1,3 @@
+/Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Rest Of Your Life/code/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Rest Of Your Life/code/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/huben/Desktop/Huris/MyGrowthPath/Computer Graphics/RayTracing/Ray Tracing The Rest Of Your Life/code/cmake-build-debug/CMakeFiles/theNextWeek.dir
